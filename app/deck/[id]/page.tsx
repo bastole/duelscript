@@ -1,18 +1,20 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { use } from "react"
 import { useDeckStore } from "@/store/useDeckStore"
 import { YgoCard } from "@/types"
 import DeckSidebar from "@/components/DeckSidebar"
 import DeckZone from "@/components/DeckZone"
 import ExportImport from "@/components/ExportImport"
+import CardModal from "@/components/CardModal"
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 
 export default function DeckBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { decks, load, addCard, removeCard, updateDeck } = useDeckStore()
+  const [zoomedCard, setZoomedCard] = useState<YgoCard | null>(null)
   useEffect(() => { load() }, [load])
 
   const deck = decks.find((d) => d.id === id)
@@ -55,6 +57,7 @@ export default function DeckBuilderPage({ params }: { params: Promise<{ id: stri
               cards={deck.mainDeck}
               limit={60}
               onRemove={(i) => removeCard(id, "mainDeck", i)}
+              onZoom={setZoomedCard}
             />
             <DeckZone
               id="extraDeck"
@@ -62,6 +65,7 @@ export default function DeckBuilderPage({ params }: { params: Promise<{ id: stri
               cards={deck.extraDeck}
               limit={15}
               onRemove={(i) => removeCard(id, "extraDeck", i)}
+              onZoom={setZoomedCard}
             />
             <DeckZone
               id="sideDeck"
@@ -69,10 +73,12 @@ export default function DeckBuilderPage({ params }: { params: Promise<{ id: stri
               cards={deck.sideDeck}
               limit={15}
               onRemove={(i) => removeCard(id, "sideDeck", i)}
+              onZoom={setZoomedCard}
             />
           </div>
         </div>
       </DndContext>
+      <CardModal card={zoomedCard} open={!!zoomedCard} onClose={() => setZoomedCard(null)} />
     </div>
   )
 }

@@ -12,9 +12,10 @@ interface Props {
   cards: YgoCard[]
   limit: number
   onRemove: (index: number) => void
+  onZoom?: (card: YgoCard) => void
 }
 
-export default function DeckZone({ id, label, cards, limit, onRemove }: Props) {
+export default function DeckZone({ id, label, cards, limit, onRemove, onZoom }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id })
   const itemIds = cards.map((_, i) => `${id}-${i}`)
 
@@ -40,6 +41,7 @@ export default function DeckZone({ id, label, cards, limit, onRemove }: Props) {
                 id={`${id}-${i}`}
                 card={card}
                 onRemove={() => onRemove(i)}
+                onZoom={onZoom}
               />
             ))}
           </div>

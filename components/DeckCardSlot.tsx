@@ -9,9 +9,10 @@ interface Props {
   id: string
   card: YgoCard
   onRemove: () => void
+  onZoom?: (card: YgoCard) => void
 }
 
-export default function DeckCardSlot({ id, card, onRemove }: Props) {
+export default function DeckCardSlot({ id, card, onRemove, onZoom }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
 
@@ -29,6 +30,9 @@ export default function DeckCardSlot({ id, card, onRemove }: Props) {
         className="h-[90px] w-[65px] rounded object-cover"
         loading="lazy"
         draggable={false}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => onZoom?.(card)}
+        style={{ cursor: onZoom ? "pointer" : undefined }}
       />
       <button
         onPointerDown={(e) => e.stopPropagation()}
