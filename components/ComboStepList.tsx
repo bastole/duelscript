@@ -1,17 +1,33 @@
 "use client"
 
 import { ComboStep } from "@/types"
-import { Trash2, GripVertical } from "lucide-react"
+import { Trash2, GripVertical, Pencil } from "lucide-react"
 import { DndContext, DragEndEvent, closestCenter } from "@dnd-kit/core"
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 
-function StepRow({ step, index, onDelete }: { step: ComboStep; index: number; onDelete: () => void }) {
+function StepRow({
+  step,
+  index,
+  onDelete,
+  onEdit,
+  isEditing,
+}: {
+  step: ComboStep
+  index: number
+  onDelete: () => void
+  onEdit: (step: ComboStep) => void
+  isEditing: boolean
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-start gap-2 rounded-lg border bg-card px-3 py-2">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-start gap-2 rounded-lg border bg-card px-3 py-2 transition-colors ${isEditing ? "border-primary bg-primary/5" : ""}`}
+    >
       <button {...attributes} {...listeners} className="mt-1 cursor-grab text-muted-foreground">
         <GripVertical size={14} />
       </button>
@@ -24,7 +40,20 @@ function StepRow({ step, index, onDelete }: { step: ComboStep; index: number; on
         </p>
         {step.note && <p className="text-xs text-muted-foreground mt-0.5 italic">{step.note}</p>}
       </div>
-      <button onClick={onDelete} className="mt-1 text-muted-foreground hover:text-destructive">
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => onEdit(step)}
+        className="mt-1 text-muted-foreground hover:text-foreground"
+        title="Edit step"
+      >
+        <Pencil size={13} />
+      </button>
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={onDelete}
+        className="mt-1 text-muted-foreground hover:text-destructive"
+        title="Delete step"
+      >
         <Trash2 size={14} />
       </button>
     </div>
@@ -33,11 +62,13 @@ function StepRow({ step, index, onDelete }: { step: ComboStep; index: number; on
 
 interface Props {
   steps: ComboStep[]
+  editingStepId?: string | null
   onDelete: (id: string) => void
+  onEdit: (step: ComboStep) => void
   onReorder: (steps: ComboStep[]) => void
 }
 
-export default function ComboStepList({ steps, onDelete, onReorder }: Props) {
+export default function ComboStepList({ steps, editingStepId, onDelete, onEdit, onReorder }: Props) {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
@@ -53,7 +84,14 @@ export default function ComboStepList({ steps, onDelete, onReorder }: Props) {
       <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-2">
           {steps.map((step, i) => (
-            <StepRow key={step.id} step={step} index={i} onDelete={() => onDelete(step.id)} />
+            <StepRow
+              key={step.id}
+              step={step}
+              index={i}
+              isEditing={editingStepId === step.id}
+              onDelete={() => onDelete(step.id)}
+              onEdit={onEdit}
+            />
           ))}
         </div>
       </SortableContext>

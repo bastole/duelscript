@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button"
 
 interface Props {
   onAdd: (step: Omit<ComboStep, "id">) => void
+  onUpdate?: (step: ComboStep) => void
+  editingStep?: ComboStep | null
+  onCancelEdit?: () => void
 }
 
-export default function ComboStepForm({ onAdd }: Props) {
+export default function ComboStepForm({ onAdd, onUpdate, editingStep, onCancelEdit }: Props) {
   const { results, loading, search } = useCardStore()
   const [query, setQuery] = useState("")
   const [selectedCard, setSelectedCard] = useState<YgoCard | null>(null)
@@ -19,6 +22,30 @@ export default function ComboStepForm({ onAdd }: Props) {
   const [toZone, setToZone] = useState<string | null>(null)
   const [note, setNote] = useState("")
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Pre-fill form when editingStep changes
+  useEffect(() => {
+    if (editingStep) {
+      setSelectedCard({
+        id: editingStep.cardId,
+        name: editingStep.cardName,
+        card_images: [{ id: editingStep.cardId, image_url: editingStep.cardImageSmall, image_url_small: editingStep.cardImageSmall }],
+        type: "", desc: "", race: "",
+      })
+      setQuery(editingStep.cardName)
+      setAction(editingStep.action)
+      setFromZone(editingStep.fromZone)
+      setToZone(editingStep.toZone)
+      setNote(editingStep.note)
+    } else {
+      setSelectedCard(null)
+      setQuery("")
+      setAction(null)
+      setFromZone(null)
+      setToZone(null)
+      setNote("")
+    }
+  }, [editingStep])
 
   useEffect(() => {
     if (!query.trim() || selectedCard) return
@@ -29,7 +56,7 @@ export default function ComboStepForm({ onAdd }: Props) {
 
   const handleSubmit = () => {
     if (!selectedCard || !action || !fromZone || !toZone) return
-    onAdd({
+    const stepData = {
       cardId: selectedCard.id,
       cardName: selectedCard.name,
       cardImageSmall: selectedCard.card_images[0].image_url_small,
@@ -37,7 +64,12 @@ export default function ComboStepForm({ onAdd }: Props) {
       fromZone,
       toZone,
       note,
-    })
+    }
+    if (editingStep && onUpdate) {
+      onUpdate({ ...stepData, id: editingStep.id })
+    } else {
+      onAdd(stepData)
+    }
     setSelectedCard(null)
     setQuery("")
     setAction(null)
@@ -46,9 +78,18 @@ export default function ComboStepForm({ onAdd }: Props) {
     setNote("")
   }
 
+  const isEditing = !!editingStep
+
   return (
-    <div className="rounded-lg border bg-card p-4 flex flex-col gap-3">
-      <p className="text-sm font-medium">Add a step</p>
+    <div className={`rounded-lg border bg-card p-4 flex flex-col gap-3 ${isEditing ? "border-primary" : ""}`}>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">{isEditing ? "Edit step" : "Add a step"}</p>
+        {isEditing && onCancelEdit && (
+          <button onClick={onCancelEdit} className="text-xs text-muted-foreground hover:text-foreground">
+            Cancel
+          </button>
+        )}
+      </div>
 
       {/* Card search */}
       {!selectedCard ? (
@@ -115,7 +156,7 @@ export default function ComboStepForm({ onAdd }: Props) {
         disabled={!selectedCard || !action || !fromZone || !toZone}
         size="sm"
       >
-        Add step
+        {isEditing ? "Save changes" : "Add step"}
       </Button>
     </div>
   )

@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { use } from "react"
 import { useComboStore } from "@/store/useComboStore"
+import { ComboStep } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ComboStepList from "@/components/ComboStepList"
 import ComboStepForm from "@/components/ComboStepForm"
@@ -10,7 +11,8 @@ import ReplayPlayer from "@/components/ReplayPlayer"
 
 export default function ComboEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { combos, load, addStep, deleteStep, reorderSteps } = useComboStore()
+  const { combos, load, addStep, updateStep, deleteStep, reorderSteps } = useComboStore()
+  const [editingStep, setEditingStep] = useState<ComboStep | null>(null)
   useEffect(() => { load() }, [load])
 
   const combo = combos.find((c) => c.id === id)
@@ -28,10 +30,17 @@ export default function ComboEditorPage({ params }: { params: Promise<{ id: stri
         <TabsContent value="edit" className="flex flex-col gap-4">
           <ComboStepList
             steps={combo.steps}
-            onDelete={(stepId) => deleteStep(id, stepId)}
+            editingStepId={editingStep?.id}
+            onDelete={(stepId) => { deleteStep(id, stepId); if (editingStep?.id === stepId) setEditingStep(null) }}
+            onEdit={setEditingStep}
             onReorder={(steps) => reorderSteps(id, steps)}
           />
-          <ComboStepForm onAdd={(step) => addStep(id, step)} />
+          <ComboStepForm
+            onAdd={(step) => addStep(id, step)}
+            editingStep={editingStep}
+            onUpdate={(step) => { updateStep(id, step); setEditingStep(null) }}
+            onCancelEdit={() => setEditingStep(null)}
+          />
         </TabsContent>
 
         <TabsContent value="replay">
